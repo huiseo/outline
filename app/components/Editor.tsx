@@ -19,6 +19,10 @@ import useDictionary from "~/hooks/useDictionary";
 import useEditorClickHandlers from "~/hooks/useEditorClickHandlers";
 import useEmbeds from "~/hooks/useEmbeds";
 import useStores from "~/hooks/useStores";
+import {
+  installDrawioGlobalBridge,
+  DRAWIO_UPDATED_EVENT_NAME,
+} from "~/utils/drawio";
 import { uploadFile, uploadFileFromUrl } from "~/utils/files";
 import lazyWithRetry from "~/utils/lazyWithRetry";
 
@@ -66,6 +70,50 @@ function Editor(props: Props, ref: React.RefObject<SharedEditor> | null) {
   );
 
   const { handleClickLink } = useEditorClickHandlers({ shareId });
+
+  // draw.io 재편집 브리지: shared/editor 코드가 window.__thinkpoolDrawioEdit(href) 로
+  // 새 탭을 열고, 저장 시 CustomEvent로 결과를 전달. 여기서 그 이벤트를 받아 embed 노드의 href를 교체.
+  React.useEffect(() => {
+    installDrawioGlobalBridge();
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent).detail as
+        | { oldHref?: string; newHref?: string }
+        | undefined;
+      if (!detail?.oldHref || !detail?.newHref) {
+        return;
+      }
+      const view = localRef?.current?.view;
+      if (!view) {
+        return;
+      }
+      const { state } = view;
+      const tr = state.tr;
+      let touched = false;
+      state.doc.descendants((node, pos) => {
+        if (node.type.name === "embed" && node.attrs.href === detail.oldHref) {
+          tr.setNodeMarkup(pos, undefined, {
+            ...node.attrs,
+            href: detail.newHref,
+          });
+          touched = true;
+        }
+        return true;
+      });
+      if (touched) {
+        view.dispatch(tr.setMeta("addToHistory", true));
+      }
+    };
+    window.addEventListener(
+      DRAWIO_UPDATED_EVENT_NAME,
+      handler as EventListener
+    );
+    return () => {
+      window.removeEventListener(
+        DRAWIO_UPDATED_EVENT_NAME,
+        handler as EventListener
+      );
+    };
+  }, []);
 
   const focusAtEnd = React.useCallback(() => {
     localRef?.current?.focusAtEnd();
