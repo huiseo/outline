@@ -244,7 +244,11 @@ const embeds: EmbedDescriptor[] = [
     title: "Diagrams.net",
     name: IntegrationService.Diagrams,
     keywords: "diagrams drawio",
-    regexMatch: [/^https:\/\/viewer\.diagrams\.net\/(?!proxy).*(title=\\w+)?/],
+    regexMatch: [
+      /^https:\/\/viewer\.diagrams\.net\/(?!proxy).*(title=\\w+)?/,
+      // 씽크풀 self-hosted drawio (server-side markdown 파서는 팀 통합 정보에 접근을 못하므로 하드코딩)
+      /^https:\/\/drawio\.thinkpool-insight\.com\/.*/,
+    ],
     icon: <Img src="/images/diagrams.png" alt="Diagrams.net" />,
     component: Diagrams,
   }),

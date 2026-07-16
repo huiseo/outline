@@ -92,7 +92,7 @@ export default class Embed extends Node {
   }
 
   get rulePlugins() {
-    return [embedsRule(this.options.embeds)];
+    return [embedsRule(this.options.embeds ?? defaultEmbeds)];
   }
 
   handleChangeSize =
