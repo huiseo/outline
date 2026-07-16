@@ -268,7 +268,9 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
         dialogs.openModal({
           id: "drawio-editor",
           title: "draw.io Diagram",
-          width: "min(95vw, 1400px)",
+          width: "min(96vw, 1600px)",
+          height: "92vh",
+          style: { marginTop: "4vh" },
           content: (
             <DrawioModal
               documentId={currentDocId}

@@ -42,8 +42,9 @@ function xmlToEmbedUrl(xml: string, title: string): string {
 const IframeWrap = styled.div`
   position: relative;
   width: 100%;
-  height: 75vh;
-  min-height: 500px;
+  /* Outline Modal 컨텐츠 영역을 최대한 다 채우도록 */
+  height: calc(90vh - 90px);
+  min-height: 520px;
   background: #f7f7f7;
 `;
 
