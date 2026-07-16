@@ -223,5 +223,11 @@ export default function blockMenuItems(
       keywords: "diagram flowchart",
       attrs: { language: "mermaidjs" },
     },
+    {
+      name: "drawio",
+      title: "draw.io Diagram",
+      icon: <Img src="/images/diagrams.png" alt="draw.io" />,
+      keywords: "drawio diagrams diagram architecture flowchart uml erd",
+    },
   ];
 }

@@ -17,6 +17,8 @@ import { AttachmentValidation } from "@shared/validations";
 import { Portal } from "~/components/Portal";
 import Scrollable from "~/components/Scrollable";
 import useDictionary from "~/hooks/useDictionary";
+import useStores from "~/hooks/useStores";
+import DrawioModal from "~/components/DrawioModal";
 import Logger from "~/utils/Logger";
 import { useEditor } from "./EditorContext";
 import Input from "./Input";
@@ -81,6 +83,7 @@ export type Props<T extends MenuItem = MenuItem> = {
 
 function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
   const { view, commands, props: editorProps } = useEditor();
+  const { dialogs } = useStores();
   const dictionary = useDictionary();
   const { t } = useTranslation();
   const hasActivated = React.useRef(false);
@@ -275,6 +278,30 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
           return triggerFilePick("*");
         case "embed":
           return triggerLinkInput(item);
+        case "drawio": {
+          props.onClose();
+          const currentDocId = (editorProps as unknown as { id?: string }).id;
+          dialogs.openModal({
+            id: "drawio-editor",
+            title: "draw.io Diagram",
+            width: "min(95vw, 1400px)",
+            content: (
+              <DrawioModal
+                documentId={currentDocId}
+                onSaved={(embedUrl) => {
+                  dialogs.closeModal("drawio-editor");
+                  // embed 노드 삽입 (commands["embed"] or createEmbed)
+                  const embedCmd = commands["embed"] ?? commands["createEmbed"];
+                  if (embedCmd) {
+                    embedCmd({ href: embedUrl });
+                  }
+                }}
+                onClose={() => dialogs.closeModal("drawio-editor")}
+              />
+            ),
+          });
+          return;
+        }
         default:
           insertNode(item);
       }
