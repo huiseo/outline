@@ -224,10 +224,13 @@ export default function blockMenuItems(
       attrs: { language: "mermaidjs" },
     },
     {
-      name: "drawio",
+      // filter가 commands[item.name] 존재를 체크하므로 noop으로 우회.
+      // handleClickItem에서 별도 case를 두지 않고 custom prop으로 식별.
+      name: "noop",
       title: "draw.io Diagram",
       icon: <Img src="/images/diagrams.png" alt="draw.io" />,
       keywords: "drawio diagrams diagram architecture flowchart uml erd",
+      attrs: { customType: "drawio" },
     },
   ];
 }

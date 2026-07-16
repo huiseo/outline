@@ -257,6 +257,34 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
     (item) => {
       props.onSelect?.(item);
 
+      // custom noop 아이템: attrs.customType으로 실제 동작 분기 (예: drawio 모달)
+      if (
+        item.name === "noop" &&
+        item.attrs &&
+        (item.attrs as { customType?: string }).customType === "drawio"
+      ) {
+        props.onClose();
+        const currentDocId = (editorProps as unknown as { id?: string }).id;
+        dialogs.openModal({
+          id: "drawio-editor",
+          title: "draw.io Diagram",
+          width: "min(95vw, 1400px)",
+          content: (
+            <DrawioModal
+              documentId={currentDocId}
+              onSaved={(embedUrl) => {
+                dialogs.closeModal("drawio-editor");
+                const embedCmd = commands["embed"] ?? commands["createEmbed"];
+                if (embedCmd) {
+                  embedCmd({ href: embedUrl });
+                }
+              }}
+              onClose={() => dialogs.closeModal("drawio-editor")}
+            />
+          ),
+        });
+        return;
+      }
       switch (item.name) {
         case "link":
           insertNode({
@@ -278,30 +306,6 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
           return triggerFilePick("*");
         case "embed":
           return triggerLinkInput(item);
-        case "drawio": {
-          props.onClose();
-          const currentDocId = (editorProps as unknown as { id?: string }).id;
-          dialogs.openModal({
-            id: "drawio-editor",
-            title: "draw.io Diagram",
-            width: "min(95vw, 1400px)",
-            content: (
-              <DrawioModal
-                documentId={currentDocId}
-                onSaved={(embedUrl) => {
-                  dialogs.closeModal("drawio-editor");
-                  // embed 노드 삽입 (commands["embed"] or createEmbed)
-                  const embedCmd = commands["embed"] ?? commands["createEmbed"];
-                  if (embedCmd) {
-                    embedCmd({ href: embedUrl });
-                  }
-                }}
-                onClose={() => dialogs.closeModal("drawio-editor")}
-              />
-            ),
-          });
-          return;
-        }
         default:
           insertNode(item);
       }
