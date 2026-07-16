@@ -22,8 +22,8 @@ function Diagrams({ matches, ...props }: Props) {
   const { embed, isEditable, attrs } = props;
   const embedUrl = matches[0];
   const params = new URL(embedUrl).searchParams;
-  const isThinkpoolDrawio = embedUrl.startsWith(
-    "https://drawio.thinkpool-insight.com/"
+  const isThinkpoolDrawio = /^https:\/\/drawio\.thinkpool-insight\.com\b/i.test(
+    embedUrl
   );
   const titlePrefix = embed.settings?.url ? "Draw.io" : "Diagrams.net";
   const displayTitle = params.get("diag") || params.get("title");
