@@ -17,8 +17,7 @@ import { AttachmentValidation } from "@shared/validations";
 import { Portal } from "~/components/Portal";
 import Scrollable from "~/components/Scrollable";
 import useDictionary from "~/hooks/useDictionary";
-import useStores from "~/hooks/useStores";
-import DrawioModal from "~/components/DrawioModal";
+import { openDrawioEditor } from "~/utils/drawio";
 import Logger from "~/utils/Logger";
 import { useEditor } from "./EditorContext";
 import Input from "./Input";
@@ -83,7 +82,6 @@ export type Props<T extends MenuItem = MenuItem> = {
 
 function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
   const { view, commands, props: editorProps } = useEditor();
-  const { dialogs } = useStores();
   const dictionary = useDictionary();
   const { t } = useTranslation();
   const hasActivated = React.useRef(false);
@@ -257,7 +255,8 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
     (item) => {
       props.onSelect?.(item);
 
-      // custom noop 아이템: attrs.customType으로 실제 동작 분기 (예: drawio 모달)
+      // custom noop 아이템: attrs.customType 으로 실제 동작 분기.
+      // draw.io는 새 탭으로 열어서 사용자에게 풀 웹앱 경험을 준다 (Google Docs 스타일).
       if (
         item.name === "noop" &&
         item.attrs &&
@@ -265,26 +264,21 @@ function SuggestionsMenu<T extends MenuItem>(props: Props<T>) {
       ) {
         props.onClose();
         const currentDocId = (editorProps as unknown as { id?: string }).id;
-        dialogs.openModal({
-          id: "drawio-editor",
-          title: "draw.io Diagram",
-          width: "min(96vw, 1600px)",
-          height: "92vh",
-          style: { marginTop: "4vh" },
-          content: (
-            <DrawioModal
-              documentId={currentDocId}
-              onSaved={(embedUrl) => {
-                dialogs.closeModal("drawio-editor");
-                const embedCmd = commands["embed"] ?? commands["createEmbed"];
-                if (embedCmd) {
-                  embedCmd({ href: embedUrl });
-                }
-              }}
-              onClose={() => dialogs.closeModal("drawio-editor")}
-            />
-          ),
+        // window.open은 클릭 이벤트 스택 안에서 호출되어야 팝업 블로커를 통과한다.
+        const win = openDrawioEditor({
+          documentId: currentDocId,
+          onSaved: (embedUrl) => {
+            const embedCmd = commands["embed"] ?? commands["createEmbed"];
+            if (embedCmd) {
+              embedCmd({ href: embedUrl });
+            }
+          },
         });
+        if (!win) {
+          toast.error(
+            "팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업 허용 후 다시 시도해주세요."
+          );
+        }
         return;
       }
       switch (item.name) {
