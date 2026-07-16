@@ -29,7 +29,9 @@ function Diagrams({ matches, ...props }: Props) {
   const displayTitle = params.get("diag") || params.get("title");
   const title = displayTitle ? `${titlePrefix} (${displayTitle})` : titlePrefix;
 
-  const showThinkpoolControls = isEditable && isThinkpoolDrawio;
+  // 씽크풀 drawio URL이면 항상 오버레이 표시 (share/view 모드에서도 편집 링크로 사용).
+  // isEditable false일 때 저장은 되지만 위키 자동 갱신은 불가 → openEdit 안에서 안내.
+  const showThinkpoolControls = isThinkpoolDrawio;
 
   const openEdit = React.useCallback(() => {
     const w = window as unknown as {
@@ -40,6 +42,15 @@ function Diagrams({ matches, ...props }: Props) {
       console.warn("__thinkpoolDrawioEdit not installed");
       return;
     }
+    if (!isEditable) {
+      // eslint-disable-next-line no-alert
+      const proceed = window.confirm(
+        "이 페이지는 읽기 전용입니다. 편집기는 열리지만 저장해도 위키 페이지의 다이어그램은 자동 갱신되지 않습니다. 계속 진행하시겠습니까?"
+      );
+      if (!proceed) {
+        return;
+      }
+    }
     const opened = w.__thinkpoolDrawioEdit(attrs.href);
     if (!opened) {
       // eslint-disable-next-line no-alert
@@ -47,9 +58,14 @@ function Diagrams({ matches, ...props }: Props) {
         "팝업이 차단되었습니다. 브라우저에서 이 사이트의 팝업 허용 후 다시 시도해주세요."
       );
     }
-  }, [attrs.href]);
+  }, [attrs.href, isEditable]);
 
   const rename = React.useCallback(() => {
+    if (!isEditable) {
+      // eslint-disable-next-line no-alert
+      window.alert("제목 변경은 편집 모드에서만 가능합니다.");
+      return;
+    }
     const w = window as unknown as {
       __thinkpoolDrawioRename?: (href: string, title: string) => string;
       __thinkpoolDrawioGetTitle?: (href: string) => string;
@@ -77,7 +93,7 @@ function Diagrams({ matches, ...props }: Props) {
         detail: { oldHref: attrs.href, newHref },
       })
     );
-  }, [attrs.href]);
+  }, [attrs.href, isEditable]);
 
   return (
     <Wrapper>
